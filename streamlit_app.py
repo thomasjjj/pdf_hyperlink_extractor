@@ -1,151 +1,69 @@
+import re
 import streamlit as st
-import pandas as pd
-import math
-from pathlib import Path
+from docx import Document
+from PyPDF2 import PdfReader
 
-# Set the title and favicon that appear in the Browser's tab bar.
-st.set_page_config(
-    page_title='GDP dashboard',
-    page_icon=':earth_americas:', # This is an emoji shortcode. Could be a URL too.
-)
+# Define a URL pattern to match hyperlinks
+url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
-# -----------------------------------------------------------------------------
-# Declare some useful functions.
+# Function to extract links from PDFs
+def extract_pdf_links(file):
+    pdf_file = PdfReader(file)
+    links = []
+    for page_num in range(len(pdf_file.pages)):
+        page = pdf_file.pages[page_num]
+        if '/Annots' in page:
+            annotations = page['/Annots']
+            for annotation in annotations:
+                a_entry = annotation.get_object().get('/A')
+                if isinstance(a_entry, dict):
+                    uri = a_entry.get('/URI')
+                    if uri:
+                        links.append(uri)
+    return links
 
-@st.cache_data
-def get_gdp_data():
-    """Grab GDP data from a CSV file.
+# Function to extract links from DOCX files
+def extract_docx_links(file):
+    doc = Document(file)
+    links = []
+    for rel in doc.part.rels.values():
+        if "hyperlink" in rel.reltype:
+            url = rel._target
+            if url:
+                links.append(url)
+    for para in doc.paragraphs:
+        links.extend(re.findall(url_pattern, para.text))
+    return links
 
-    This uses caching to avoid having to read the file every time. If we were
-    reading from an HTTP endpoint instead of a file, it's a good idea to set
-    a maximum age to the cache with the TTL argument: @st.cache_data(ttl='1d')
-    """
+# Streamlit app UI
+def main():
+    st.title("Document Link Extractor")
+    st.write("Upload a PDF or DOCX file, and this tool will retrieve all the hyperlinks.")
 
-    # Instead of a CSV on disk, you could read from an HTTP endpoint here too.
-    DATA_FILENAME = Path(__file__).parent/'data/gdp_data.csv'
-    raw_gdp_df = pd.read_csv(DATA_FILENAME)
-
-    MIN_YEAR = 1960
-    MAX_YEAR = 2022
-
-    # The data above has columns like:
-    # - Country Name
-    # - Country Code
-    # - [Stuff I don't care about]
-    # - GDP for 1960
-    # - GDP for 1961
-    # - GDP for 1962
-    # - ...
-    # - GDP for 2022
-    #
-    # ...but I want this instead:
-    # - Country Name
-    # - Country Code
-    # - Year
-    # - GDP
-    #
-    # So let's pivot all those year-columns into two: Year and GDP
-    gdp_df = raw_gdp_df.melt(
-        ['Country Code'],
-        [str(x) for x in range(MIN_YEAR, MAX_YEAR + 1)],
-        'Year',
-        'GDP',
-    )
-
-    # Convert years from string to integers
-    gdp_df['Year'] = pd.to_numeric(gdp_df['Year'])
-
-    return gdp_df
-
-gdp_df = get_gdp_data()
-
-# -----------------------------------------------------------------------------
-# Draw the actual page
-
-# Set the title that appears at the top of the page.
-'''
-# :earth_americas: GDP dashboard
-
-Browse GDP data from the [World Bank Open Data](https://data.worldbank.org/) website. As you'll
-notice, the data only goes to 2022 right now, and datapoints for certain years are often missing.
-But it's otherwise a great (and did I mention _free_?) source of data.
-'''
-
-# Add some spacing
-''
-''
-
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
-
-from_year, to_year = st.slider(
-    'Which years are you interested in?',
-    min_value=min_value,
-    max_value=max_value,
-    value=[min_value, max_value])
-
-countries = gdp_df['Country Code'].unique()
-
-if not len(countries):
-    st.warning("Select at least one country")
-
-selected_countries = st.multiselect(
-    'Which countries would you like to view?',
-    countries,
-    ['DEU', 'FRA', 'GBR', 'BRA', 'MEX', 'JPN'])
-
-''
-''
-''
-
-# Filter the data
-filtered_gdp_df = gdp_df[
-    (gdp_df['Country Code'].isin(selected_countries))
-    & (gdp_df['Year'] <= to_year)
-    & (from_year <= gdp_df['Year'])
-]
-
-st.header('GDP over time', divider='gray')
-
-''
-
-st.line_chart(
-    filtered_gdp_df,
-    x='Year',
-    y='GDP',
-    color='Country Code',
-)
-
-''
-''
-
-
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
-
-st.header(f'GDP in {to_year}', divider='gray')
-
-''
-
-cols = st.columns(4)
-
-for i, country in enumerate(selected_countries):
-    col = cols[i % len(cols)]
-
-    with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-
-        if math.isnan(first_gdp):
-            growth = 'n/a'
-            delta_color = 'off'
+    # File uploader for PDF or DOCX
+    uploaded_file = st.file_uploader("Choose a PDF or DOCX file", type=['pdf', 'docx'])
+    
+    if uploaded_file is not None:
+        # Check file extension and extract links accordingly
+        if uploaded_file.name.endswith('.pdf'):
+            links = extract_pdf_links(uploaded_file)
+        elif uploaded_file.name.endswith('.docx'):
+            links = extract_docx_links(uploaded_file)
         else:
-            growth = f'{last_gdp / first_gdp:,.2f}x'
-            delta_color = 'normal'
+            st.error("Unsupported file type. Please upload a PDF or DOCX file.")
+            return
 
-        st.metric(
-            label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
-            delta=growth,
-            delta_color=delta_color
-        )
+        # Display the extracted links
+        if links:
+            unique_links = list(set(links))  # Remove duplicates
+            st.write("Extracted Links:")
+            for link in unique_links:
+                st.write(link)
+
+            # Button to copy links to clipboard (Streamlit cannot access clipboard directly)
+            st.download_button("Download Links as Text File", "\n".join(unique_links), file_name="extracted_links.txt")
+        else:
+            st.write("No links found in the document.")
+
+if __name__ == "__main__":
+    main()
