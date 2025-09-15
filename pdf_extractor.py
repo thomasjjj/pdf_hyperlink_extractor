@@ -1,21 +1,17 @@
-import re
 from typing import List
 
 from PyPDF2 import PdfReader, errors
 
-# Regular expression pattern for matching URLs within PDF text
-URL_PATTERN = re.compile(
-    r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-)
+from link_patterns import URL_PATTERN
 
 
 def extract_pdf_links(file) -> List[str]:
     """Extract hyperlinks from a PDF file.
 
     The function scans both annotation dictionaries and visible text objects
-    for links.  Links embedded via annotations (\"/Annots\") are retrieved
+    for links. Links embedded via annotations ("/Annots") are retrieved
     directly, while links present only in the rendered text are located using
-    regular expression matching on the page's extracted text.
+    :data:`link_patterns.URL_PATTERN`.
 
     Parameters
     ----------
@@ -25,14 +21,14 @@ def extract_pdf_links(file) -> List[str]:
     Returns
     -------
     List[str]
-        A list of hyperlinks found within the document.  An empty list is
+        A list of hyperlinks found within the document. An empty list is
         returned if no links are found.
 
     Raises
     ------
     ValueError
-        If the PDF is encrypted and cannot be decrypted or if it is
-        malformed.
+        If the PDF cannot be read or if decryption with an empty password
+        fails.
     """
     links: List[str] = []
     try:
@@ -41,11 +37,13 @@ def extract_pdf_links(file) -> List[str]:
         raise ValueError("Unable to read PDF") from exc
 
     if getattr(reader, "is_encrypted", False):
-        # Attempt to decrypt with an empty password; if it still fails, raise
+        # Attempt to decrypt with an empty password and stop if it fails
         try:
-            reader.decrypt("")
+            result = reader.decrypt("")
         except errors.PdfReadError as exc:
             raise ValueError("Encrypted PDF cannot be decrypted") from exc
+        if result == 0:
+            raise ValueError("Encrypted PDF cannot be decrypted")
 
     for page in reader.pages:
         # Extract links from annotation dictionaries
@@ -62,9 +60,10 @@ def extract_pdf_links(file) -> List[str]:
             text = page.extract_text() or ""
         except Exception:
             text = ""
-        links.extend(re.findall(URL_PATTERN, text))
+        links.extend(URL_PATTERN.findall(text))
 
     return links
 
 
-__all__ = ["extract_pdf_links", "URL_PATTERN"]
+__all__ = ["extract_pdf_links"]
+

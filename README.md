@@ -9,6 +9,8 @@ A lightweight Streamlit app for extracting hyperlinks from PDF and DOCX files.
 - Detects links from PDF annotations and DOCX hyperlink relations or plain text.
 - Deduplicates results and lets you download them as a text file.
 - Runs entirely in the browser via Streamlit.
+- Centralized regex patterns for URLs, mailto, and FTP links.
+- Stops processing encrypted PDFs that cannot be decrypted.
 
 ## Installation
 

@@ -1,21 +1,28 @@
 import streamlit as st
 from docx import Document
 
-from pdf_extractor import URL_PATTERN, extract_pdf_links
+from link_patterns import URL_PATTERN
+from pdf_extractor import extract_pdf_links
 
 
-# Function to extract links from DOCX files
 def extract_docx_links(file):
+    """Extract hyperlinks from a DOCX file.
+
+    Links are collected from relationship targets and from visible text using
+    :data:`link_patterns.URL_PATTERN`. Duplicate links are removed before
+    returning.
+    """
     doc = Document(file)
     links = []
     for rel in doc.part.rels.values():
         if "hyperlink" in rel.reltype:
-            url = rel._target
+            url = getattr(rel, "target_ref", None)
             if url:
                 links.append(url)
     for para in doc.paragraphs:
         links.extend(URL_PATTERN.findall(para.text))
-    return links
+    # Deduplicate while preserving order
+    return list(dict.fromkeys(links))
 
 # Streamlit app UI
 def main():
