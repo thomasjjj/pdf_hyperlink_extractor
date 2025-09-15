@@ -1,17 +1,51 @@
-# PDF Hyperlink Extractor
+# Document Link Extractor
 
-A Streamlit app that extracts hyperlinks from uploaded PDF or DOCX files.
+A lightweight Streamlit app for extracting hyperlinks from PDF and DOCX files.
 
-### How to run it on your own machine
+## Features
 
-1. Install the requirements
 
-   ```
-   pip install -r requirements.txt
-   ```
+- Upload a PDF or DOCX file and retrieve all hyperlinks.
+- Detects links from PDF annotations and DOCX hyperlink relations or plain text.
+- Deduplicates results and lets you download them as a text file.
+- Runs entirely in the browser via Streamlit.
 
-2. Run the app
+## Installation
 
-   ```
-   streamlit run streamlit_app.py
-   ```
+```bash
+pip install -r requirements.txt
+```
+
+
+## Usage
+
+### Launch the Streamlit app
+
+```bash
+streamlit run streamlit_app.py
+```
+
+### Use the extraction functions directly
+
+```python
+from streamlit_app import extract_pdf_links, extract_docx_links
+
+with open("example.pdf", "rb") as fh:
+    print(extract_pdf_links(fh))
+
+with open("example.docx", "rb") as fh:
+    print(extract_docx_links(fh))
+```
+
+## FAQ
+
+**Which file formats are supported?**  
+PDF and DOCX files.
+
+**Does the app store my documents?**  
+No. Uploaded files are processed in memory and discarded after extraction.
+
+**How are duplicate links handled?**  
+Duplicates are removed before displaying or downloading the list of links.
+
+
