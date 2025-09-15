@@ -4,6 +4,7 @@ A lightweight Streamlit app for extracting hyperlinks from PDF and DOCX files.
 
 ## Features
 
+
 - Upload a PDF or DOCX file and retrieve all hyperlinks.
 - Detects links from PDF annotations and DOCX hyperlink relations or plain text.
 - Deduplicates results and lets you download them as a text file.
@@ -14,6 +15,7 @@ A lightweight Streamlit app for extracting hyperlinks from PDF and DOCX files.
 ```bash
 pip install -r requirements.txt
 ```
+
 
 ## Usage
 
@@ -45,4 +47,5 @@ No. Uploaded files are processed in memory and discarded after extraction.
 
 **How are duplicate links handled?**  
 Duplicates are removed before displaying or downloading the list of links.
+
 
