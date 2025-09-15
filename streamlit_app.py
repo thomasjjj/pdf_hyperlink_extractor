@@ -3,6 +3,7 @@ from docx import Document
 
 from pdf_extractor import URL_PATTERN, extract_pdf_links
 
+
 # Function to extract links from DOCX files
 def extract_docx_links(file):
     doc = Document(file)
