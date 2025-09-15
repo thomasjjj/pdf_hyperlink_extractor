@@ -1,24 +1,8 @@
 import streamlit as st
 from docx import Document
-from PyPDF2 import PdfReader
 
-from link_patterns import URL_PATTERN
+from pdf_extractor import URL_PATTERN, extract_pdf_links
 
-# Function to extract links from PDFs
-def extract_pdf_links(file):
-    pdf_file = PdfReader(file)
-    links = []
-    for page_num in range(len(pdf_file.pages)):
-        page = pdf_file.pages[page_num]
-        if '/Annots' in page:
-            annotations = page['/Annots']
-            for annotation in annotations:
-                a_entry = annotation.get_object().get('/A')
-                if isinstance(a_entry, dict):
-                    uri = a_entry.get('/URI')
-                    if uri:
-                        links.append(uri)
-    return links
 
 # Function to extract links from DOCX files
 def extract_docx_links(file):
@@ -44,7 +28,11 @@ def main():
     if uploaded_file is not None:
         # Check file extension and extract links accordingly
         if uploaded_file.name.endswith('.pdf'):
-            links = extract_pdf_links(uploaded_file)
+            try:
+                links = extract_pdf_links(uploaded_file)
+            except ValueError as exc:
+                st.error(str(exc))
+                return
         elif uploaded_file.name.endswith('.docx'):
             links = extract_docx_links(uploaded_file)
         else:
