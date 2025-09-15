@@ -1,10 +1,8 @@
-import re
 import streamlit as st
 from docx import Document
 from PyPDF2 import PdfReader
 
-# Define a URL pattern to match hyperlinks
-url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+from link_patterns import URL_PATTERN
 
 # Function to extract links from PDFs
 def extract_pdf_links(file):
@@ -32,7 +30,7 @@ def extract_docx_links(file):
             if url:
                 links.append(url)
     for para in doc.paragraphs:
-        links.extend(re.findall(url_pattern, para.text))
+        links.extend(URL_PATTERN.findall(para.text))
     return links
 
 # Streamlit app UI
