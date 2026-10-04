@@ -1,40 +1,41 @@
-"""Functions for extracting hyperlinks from supported document formats."""
+"""Public API for document link extraction, independent of Streamlit."""
 
-from typing import BinaryIO, List
+from os import PathLike
+from pathlib import Path
 
-from docx import Document
-
-from link_patterns import URL_PATTERN
+from docx_extractor import extract_docx_links
+from extraction_errors import ExtractionError, PdfPasswordError
+from extraction_utils import DocumentSource
 from pdf_extractor import extract_pdf_links
 
 
-def extract_docx_links(file: BinaryIO) -> List[str]:
-    """Extract hyperlinks from a DOCX file.
+def extract_links(
+    source: DocumentSource,
+    filename: str | PathLike[str] | None = None,
+    *,
+    password: str = "",
+) -> list[str]:
+    """Choose an extractor by filename, accepting mixed-case PDF/DOCX suffixes.
 
-    Links are collected from relationship targets and from visible text using
-    :data:`link_patterns.URL_PATTERN`. Duplicate links are removed while
-    preserving their first occurrence.
-
-    Parameters
-    ----------
-    file: BinaryIO
-        A file-like object containing DOCX data.
-
-    Returns
-    -------
-    List[str]
-        A list of unique URLs extracted from the DOCX.
+    Paths and named streams provide their own filename. For bytes and unnamed
+    streams, pass filename explicitly. No document data is written to disk.
     """
-    doc = Document(file)
-    links: List[str] = []
-    for rel in doc.part.rels.values():
-        if "hyperlink" in rel.reltype:
-            url = getattr(rel, "target_ref", None)
-            if url:
-                links.append(url)
-    for para in doc.paragraphs:
-        links.extend(URL_PATTERN.findall(para.text))
-    return list(dict.fromkeys(links))
+    if filename is None:
+        filename = source if isinstance(source, (str, PathLike)) else getattr(source, "name", "")
+    if not isinstance(filename, (str, PathLike)):
+        raise ExtractionError("Unsupported file type. Please provide a PDF or DOCX filename.")
+    suffix = Path(filename).suffix.lower()
+    if suffix == ".pdf":
+        return extract_pdf_links(source, password=password)
+    if suffix == ".docx":
+        return extract_docx_links(source)
+    raise ExtractionError("Unsupported file type. Please choose a PDF or DOCX file.")
 
 
-__all__ = ["extract_pdf_links", "extract_docx_links"]
+__all__ = [
+    "ExtractionError",
+    "PdfPasswordError",
+    "extract_links",
+    "extract_pdf_links",
+    "extract_docx_links",
+]

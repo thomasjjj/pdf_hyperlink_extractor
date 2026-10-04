@@ -1,44 +1,84 @@
-"""Streamlit interface for extracting hyperlinks from documents."""
+"""Streamlit interface for document link extraction."""
+
+from pathlib import Path
 
 import streamlit as st
 
-from extractors import extract_docx_links, extract_pdf_links
+# Keep the original imports available for callers of earlier app versions.
+from extractors import ExtractionError, extract_docx_links, extract_links, extract_pdf_links
+
+__all__ = ["main", "extract_docx_links", "extract_pdf_links"]
 
 
-# Streamlit app UI
+def _clear_upload_state() -> None:
+    st.session_state.pop("extraction_result", None)
+    st.session_state.pop("pdf_password", None)
+
+
 def main() -> None:
-    """Run the Streamlit interface for hyperlink extraction."""
+    """Extract once on request and retain results only for the current session."""
+    st.set_page_config(page_title="Document Link Extractor", page_icon="🔗")
     st.title("Document Link Extractor")
-    st.write("Upload a PDF or DOCX file, and this tool will retrieve all the hyperlinks.")
+    st.write("Extract hyperlinks and text links from a PDF or Word document.")
+    st.caption("Supports web, mailto, and FTP links. Documents are processed in memory.")
 
-    # File uploader for PDF or DOCX
-    uploaded_file = st.file_uploader("Choose a PDF or DOCX file", type=['pdf', 'docx'])
+    uploaded_file = st.file_uploader(
+        "Choose a PDF or DOCX file",
+        type=["pdf", "docx"],
+        key="document",
+        on_change=_clear_upload_state,
+    )
+    is_pdf = uploaded_file is not None and Path(uploaded_file.name).suffix.lower() == ".pdf"
+    password = ""
+    with st.form("extraction_options"):
+        if is_pdf:
+            password = st.text_input(
+                "PDF password (optional)",
+                type="password",
+                key="pdf_password",
+                help="Leave blank for PDFs that do not require a password.",
+            )
+        submitted = st.form_submit_button(
+            "Extract links",
+            type="primary",
+            disabled=uploaded_file is None,
+        )
 
-    if uploaded_file is not None:
-        # Check file extension and extract links accordingly
-        if uploaded_file.name.endswith('.pdf'):
-            try:
-                links = extract_pdf_links(uploaded_file)
-            except ValueError as exc:
-                st.error(str(exc))
-                return
-        elif uploaded_file.name.endswith('.docx'):
-            links = extract_docx_links(uploaded_file)
+    if submitted and uploaded_file is not None:
+        st.session_state.pop("extraction_result", None)
+        try:
+            with st.spinner("Extracting links…"):
+                links = extract_links(
+                    uploaded_file.getvalue(),
+                    uploaded_file.name,
+                    password=password,
+                )
+        except ExtractionError as exc:
+            st.error(str(exc))
         else:
-            st.error("Unsupported file type. Please upload a PDF or DOCX file.")
-            return
+            st.session_state["extraction_result"] = (uploaded_file.name, links)
 
-        # Display the extracted links
-        if links:
-            unique_links = list(set(links))  # Remove duplicates
-            st.write("Extracted Links:")
-            for link in unique_links:
-                st.write(link)
+    result = st.session_state.get("extraction_result")
+    if result is None:
+        return
+    filename, links = result
+    if not links:
+        st.info("No links found in the document.")
+        if Path(filename).suffix.lower() == ".pdf":
+            st.caption("Scanned PDF images need OCR before text links can be detected.")
+        return
 
-            # Button to copy links to clipboard (Streamlit cannot access clipboard directly)
-            st.download_button("Download Links as Text File", "\n".join(unique_links), file_name="extracted_links.txt")
-        else:
-            st.write("No links found in the document.")
+    st.success(f"Found {len(links)} unique {'link' if len(links) == 1 else 'links'}.")
+    st.caption(f"Results for {filename}")
+    link_text = "\n".join(links)
+    st.code(link_text, language=None, wrap_lines=True)
+    st.download_button(
+        "Download links as text",
+        link_text,
+        file_name=f"{Path(filename).stem}_links.txt",
+        mime="text/plain; charset=utf-8",
+        on_click="ignore",
+    )
 
 
 if __name__ == "__main__":
