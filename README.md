@@ -1,19 +1,64 @@
-# :earth_americas: GDP dashboard template
+# Document Link Extractor
 
-A simple Streamlit app showing the GDP of different countries in the world.
+A lightweight Streamlit app for extracting hyperlinks from PDF and DOCX files.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://gdp-dashboard-template.streamlit.app/)
+## Features
 
-### How to run it on your own machine
 
-1. Install the requirements
+- Upload a PDF or DOCX file and retrieve all hyperlinks.
+- Detects links from PDF annotations and DOCX hyperlink relations or plain text.
+- Deduplicates results and lets you download them as a text file.
+- Runs entirely in the browser via Streamlit.
+- Centralized regex patterns for URLs, mailto, and FTP links.
+- Stops processing encrypted PDFs that cannot be decrypted.
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+## Installation
 
-2. Run the app
+```bash
+pip install -r requirements.txt
+```
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+
+## Usage
+
+### Launch the Streamlit app
+
+```bash
+streamlit run streamlit_app.py
+```
+
+### Use the extraction functions directly
+
+```python
+from extractors import extract_pdf_links, extract_docx_links
+
+with open("example.pdf", "rb") as fh:
+    print(extract_pdf_links(fh))
+
+with open("example.docx", "rb") as fh:
+    print(extract_docx_links(fh))
+```
+
+The `extractors` module exposes both functions without loading the Streamlit UI.
+PDF parsing is implemented in `pdf_extractor.py`, which remains available for
+direct imports. Existing imports from `streamlit_app` also continue to work.
+
+## Testing
+
+```bash
+pip install pytest
+python -m pytest -q
+```
+
+## FAQ
+
+**Which file formats are supported?**  
+PDF and DOCX files.
+
+**Does the app store my documents?**  
+No. Uploaded files are processed in memory and discarded after extraction.
+
+**How are duplicate links handled?**  
+Duplicates are removed before displaying or downloading the list of links.
+
+

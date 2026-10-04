@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from extractors import extract_pdf_links, extract_docx_links
+from extractors import extract_docx_links, extract_pdf_links
 
 
 # Streamlit app UI
@@ -17,7 +17,11 @@ def main() -> None:
     if uploaded_file is not None:
         # Check file extension and extract links accordingly
         if uploaded_file.name.endswith('.pdf'):
-            links = extract_pdf_links(uploaded_file)
+            try:
+                links = extract_pdf_links(uploaded_file)
+            except ValueError as exc:
+                st.error(str(exc))
+                return
         elif uploaded_file.name.endswith('.docx'):
             links = extract_docx_links(uploaded_file)
         else:

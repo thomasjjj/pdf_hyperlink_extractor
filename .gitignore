@@ -1,5 +1,9 @@
 .streamlit/secrets.toml
 
+# Data files
+# Place datasets in this directory and keep them untracked
+data/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
