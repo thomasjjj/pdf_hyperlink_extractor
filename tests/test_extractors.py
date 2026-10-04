@@ -11,8 +11,20 @@ from docx.oxml.ns import qn
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from pdf_extractor import extract_pdf_links
-from streamlit_app import extract_docx_links
+import extractors
+import pdf_extractor
+import streamlit_app
+
+
+PDF_EXTRACTORS = [
+    pytest.param(extractors.extract_pdf_links, id="extractors"),
+    pytest.param(pdf_extractor.extract_pdf_links, id="pdf_extractor"),
+    pytest.param(streamlit_app.extract_pdf_links, id="streamlit_app"),
+]
+DOCX_EXTRACTORS = [
+    pytest.param(extractors.extract_docx_links, id="extractors"),
+    pytest.param(streamlit_app.extract_docx_links, id="streamlit_app"),
+]
 
 
 PDF_HEADER = b"%PDF-1.4\n"
@@ -51,12 +63,12 @@ def build_sample_pdf_bytes() -> bytes:
     return PDF_HEADER + bytes(body) + xref + trailer
 
 
-def build_encrypted_pdf_bytes() -> bytes:
+def build_encrypted_pdf_bytes(password: str = "secret") -> bytes:
     reader = PdfReader(BytesIO(build_sample_pdf_bytes()))
     writer = PdfWriter()
     for page in reader.pages:
         writer.add_page(page)
-    writer.encrypt("secret")
+    writer.encrypt(password)
     buffer = BytesIO()
     writer.write(buffer)
     return buffer.getvalue()
@@ -89,19 +101,52 @@ def build_sample_docx_bytes() -> bytes:
     return buffer.getvalue()
 
 
-def test_extract_pdf_links():
+@pytest.mark.parametrize("extract_pdf_links", PDF_EXTRACTORS)
+def test_extract_pdf_links(extract_pdf_links):
     pdf_file = BytesIO(build_sample_pdf_bytes())
     links = extract_pdf_links(pdf_file)
     assert set(links) == {"https://example.com", "https://example.org"}
 
 
-def test_extract_pdf_links_encrypted():
+@pytest.mark.parametrize("extract_pdf_links", PDF_EXTRACTORS)
+def test_extract_pdf_links_encrypted(extract_pdf_links):
     encrypted_pdf = BytesIO(build_encrypted_pdf_bytes())
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Encrypted PDF cannot be decrypted"):
         extract_pdf_links(encrypted_pdf)
 
 
-def test_extract_docx_links():
+@pytest.mark.parametrize("extract_pdf_links", PDF_EXTRACTORS)
+def test_extract_pdf_links_empty_password(extract_pdf_links):
+    pdf_file = BytesIO(build_encrypted_pdf_bytes(password=""))
+    assert set(extract_pdf_links(pdf_file)) == {
+        "https://example.com", "https://example.org"
+    }
+
+
+@pytest.mark.parametrize("extract_pdf_links", PDF_EXTRACTORS)
+def test_extract_pdf_links_invalid(extract_pdf_links):
+    with pytest.raises(ValueError, match="Unable to read PDF"):
+        extract_pdf_links(BytesIO(b"This is not a PDF"))
+
+
+@pytest.mark.parametrize("extract_docx_links", DOCX_EXTRACTORS)
+def test_extract_docx_links(extract_docx_links):
     docx_file = BytesIO(build_sample_docx_bytes())
     links = extract_docx_links(docx_file)
     assert set(links) == {"https://example.com", "https://example.org"}
+
+
+@pytest.mark.parametrize("extract_docx_links", DOCX_EXTRACTORS)
+def test_extract_docx_links_deduplicates_in_order(extract_docx_links):
+    document = Document()
+    paragraph = document.add_paragraph("Example link: ")
+    add_hyperlink(paragraph, "https://example.com", "Example")
+    document.add_paragraph("https://example.org https://example.com")
+    document.add_paragraph("https://example.org https://example.net")
+    buffer = BytesIO()
+    document.save(buffer)
+    buffer.seek(0)
+
+    assert extract_docx_links(buffer) == [
+        "https://example.com", "https://example.org", "https://example.net"
+    ]

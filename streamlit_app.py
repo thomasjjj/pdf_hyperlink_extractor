@@ -1,37 +1,19 @@
+"""Streamlit interface for extracting hyperlinks from documents."""
+
 import streamlit as st
-from docx import Document
 
-from link_patterns import URL_PATTERN
-from pdf_extractor import extract_pdf_links
+from extractors import extract_docx_links, extract_pdf_links
 
-
-def extract_docx_links(file):
-    """Extract hyperlinks from a DOCX file.
-
-    Links are collected from relationship targets and from visible text using
-    :data:`link_patterns.URL_PATTERN`. Duplicate links are removed before
-    returning.
-    """
-    doc = Document(file)
-    links = []
-    for rel in doc.part.rels.values():
-        if "hyperlink" in rel.reltype:
-            url = getattr(rel, "target_ref", None)
-            if url:
-                links.append(url)
-    for para in doc.paragraphs:
-        links.extend(URL_PATTERN.findall(para.text))
-    # Deduplicate while preserving order
-    return list(dict.fromkeys(links))
 
 # Streamlit app UI
-def main():
+def main() -> None:
+    """Run the Streamlit interface for hyperlink extraction."""
     st.title("Document Link Extractor")
     st.write("Upload a PDF or DOCX file, and this tool will retrieve all the hyperlinks.")
 
     # File uploader for PDF or DOCX
     uploaded_file = st.file_uploader("Choose a PDF or DOCX file", type=['pdf', 'docx'])
-    
+
     if uploaded_file is not None:
         # Check file extension and extract links accordingly
         if uploaded_file.name.endswith('.pdf'):
@@ -57,6 +39,7 @@ def main():
             st.download_button("Download Links as Text File", "\n".join(unique_links), file_name="extracted_links.txt")
         else:
             st.write("No links found in the document.")
+
 
 if __name__ == "__main__":
     main()

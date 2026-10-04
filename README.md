@@ -30,13 +30,24 @@ streamlit run streamlit_app.py
 ### Use the extraction functions directly
 
 ```python
-from streamlit_app import extract_pdf_links, extract_docx_links
+from extractors import extract_pdf_links, extract_docx_links
 
 with open("example.pdf", "rb") as fh:
     print(extract_pdf_links(fh))
 
 with open("example.docx", "rb") as fh:
     print(extract_docx_links(fh))
+```
+
+The `extractors` module exposes both functions without loading the Streamlit UI.
+PDF parsing is implemented in `pdf_extractor.py`, which remains available for
+direct imports. Existing imports from `streamlit_app` also continue to work.
+
+## Testing
+
+```bash
+pip install pytest
+python -m pytest -q
 ```
 
 ## FAQ
