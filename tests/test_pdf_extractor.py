@@ -6,7 +6,7 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.errors import DependencyError, PdfReadError
 from pypdf.generic import ArrayObject, DictionaryObject, NameObject, NullObject, NumberObject
 
-from extractors import ExtractionError, PdfPasswordError, extract_pdf_links
+from pdf_hyperlink_extractor import ExtractionError, PdfPasswordError, extract_pdf_links
 from tests.document_builders import build_pdf
 
 
@@ -81,7 +81,10 @@ def test_pdf_does_not_silently_drop_failed_text_extraction():
 
 def test_pdf_reports_missing_encryption_dependencies():
     with (
-        patch("pdf_extractor.PdfReader", side_effect=DependencyError("crypto unavailable")),
+        patch(
+            "pdf_hyperlink_extractor.pdf_extractor.PdfReader",
+            side_effect=DependencyError("crypto unavailable"),
+        ),
         pytest.raises(ExtractionError, match="crypto dependencies"),
     ):
         extract_pdf_links(build_pdf())
@@ -100,7 +103,7 @@ def test_pdf_without_links():
 @pytest.mark.parametrize("error", [ValueError("invalid token"), TypeError("bad dictionary")])
 def test_pdf_parser_data_errors_are_readable(error):
     with (
-        patch("pdf_extractor.PdfReader", side_effect=error),
+        patch("pdf_hyperlink_extractor.pdf_extractor.PdfReader", side_effect=error),
         pytest.raises(ExtractionError, match="Unable to read PDF"),
     ):
         extract_pdf_links(build_pdf())
@@ -108,7 +111,10 @@ def test_pdf_parser_data_errors_are_readable(error):
 
 def test_pdf_reports_unsupported_features():
     with (
-        patch("pdf_extractor.PdfReader", side_effect=NotImplementedError("encryption handler")),
+        patch(
+            "pdf_hyperlink_extractor.pdf_extractor.PdfReader",
+            side_effect=NotImplementedError("encryption handler"),
+        ),
         pytest.raises(ExtractionError, match="unsupported"),
     ):
         extract_pdf_links(build_pdf())

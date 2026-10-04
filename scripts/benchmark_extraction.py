@@ -7,7 +7,7 @@ from time import perf_counter
 
 from docx import Document
 
-from extractors import extract_docx_links, extract_pdf_links
+from pdf_hyperlink_extractor import extract_docx_links, extract_pdf_links
 from tests.document_builders import build_pdf, save_docx
 
 

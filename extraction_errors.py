@@ -1,9 +1,8 @@
-"""User-facing document extraction errors."""
+"""Checkout compatibility wrapper; use pdf_hyperlink_extractor.extraction_errors in new code."""
 
+from pdf_hyperlink_extractor.extraction_errors import (
+    ExtractionError,
+    PdfPasswordError,
+)
 
-class ExtractionError(ValueError):
-    """The input document cannot be processed."""
-
-
-class PdfPasswordError(ExtractionError):
-    """The supplied password cannot decrypt the PDF."""
+__all__ = ["ExtractionError", "PdfPasswordError"]

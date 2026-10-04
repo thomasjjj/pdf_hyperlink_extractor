@@ -1,6 +1,6 @@
 import pytest
 
-from link_patterns import find_links
+from pdf_hyperlink_extractor.link_patterns import find_links
 
 
 @pytest.mark.parametrize(

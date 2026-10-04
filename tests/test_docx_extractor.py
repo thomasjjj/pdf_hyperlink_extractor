@@ -11,7 +11,7 @@ from docx.opc.part import XmlPart
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
-from extractors import ExtractionError, extract_docx_links
+from pdf_hyperlink_extractor import ExtractionError, extract_docx_links
 from tests.document_builders import add_hyperlink, save_docx
 
 

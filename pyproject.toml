@@ -1,8 +1,57 @@
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13"]
+build-backend = "uv_build"
+
+[project]
+name = "pdf-hyperlink-extractor"
+version = "0.1.0"
+description = "Extract hyperlinks and text links from PDF and DOCX documents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = ["pdf", "docx", "hyperlinks", "extraction"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Text Processing",
+    "Typing :: Typed",
+]
+dependencies = [
+    "python-docx>=1.2,<2",
+    "pypdf[crypto]>=6.19,<7",
+]
+
+[project.optional-dependencies]
+streamlit = ["streamlit>=1.65,<2"]
+
+[project.scripts]
+pdf-hyperlink-extractor-ui = "pdf_hyperlink_extractor.ui:main"
+
+[project.urls]
+Repository = "https://github.com/thomasjjj/pdf_hyperlink_extractor"
+Issues = "https://github.com/thomasjjj/pdf_hyperlink_extractor/issues"
+
+[dependency-groups]
+dev = [
+    "build>=1.2,<2",
+    "pytest>=8,<10",
+    "pytest-cov>=7,<8",
+    "ruff>=0.16,<0.17",
+    "twine>=6,<7",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 addopts = "--strict-markers"
 filterwarnings = ["error"]
+markers = ["streamlit: requires the optional Streamlit interface"]
 
 [tool.ruff]
 target-version = "py311"
@@ -13,10 +62,7 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 
 [tool.coverage.run]
 branch = true
-source = [
-    "extractors", "docx_extractor", "pdf_extractor", "link_patterns",
-    "extraction_utils", "extraction_errors", "streamlit_app",
-]
+source = ["pdf_hyperlink_extractor"]
 
 [tool.coverage.report]
 show_missing = true

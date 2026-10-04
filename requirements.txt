@@ -1,3 +1,2 @@
-streamlit>=1.65,<2
-python-docx>=1.2,<2
-pypdf[crypto]>=6.19,<7
+# Compatibility for Streamlit deployments; dependencies live in pyproject.toml.
+-e .[streamlit]

@@ -5,7 +5,8 @@ from docx import Document
 
 import extractors
 import pdf_extractor
-import streamlit_app
+import pdf_hyperlink_extractor
+from pdf_hyperlink_extractor import docx_extractor
 from tests.document_builders import (
     add_hyperlink,
     build_encrypted_pdf_bytes,
@@ -16,11 +17,12 @@ from tests.document_builders import (
 PDF_EXTRACTORS = [
     pytest.param(extractors.extract_pdf_links, id="extractors"),
     pytest.param(pdf_extractor.extract_pdf_links, id="pdf_extractor"),
-    pytest.param(streamlit_app.extract_pdf_links, id="streamlit_app"),
+    pytest.param(pdf_hyperlink_extractor.extract_pdf_links, id="package"),
 ]
 DOCX_EXTRACTORS = [
     pytest.param(extractors.extract_docx_links, id="extractors"),
-    pytest.param(streamlit_app.extract_docx_links, id="streamlit_app"),
+    pytest.param(pdf_hyperlink_extractor.extract_docx_links, id="package"),
+    pytest.param(docx_extractor.extract_docx_links, id="docx_extractor"),
 ]
 
 

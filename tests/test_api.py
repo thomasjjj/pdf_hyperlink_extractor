@@ -4,7 +4,12 @@ from io import BytesIO, StringIO
 
 import pytest
 
-from extractors import ExtractionError, extract_docx_links, extract_links, extract_pdf_links
+from pdf_hyperlink_extractor import (
+    ExtractionError,
+    extract_docx_links,
+    extract_links,
+    extract_pdf_links,
+)
 from tests.document_builders import build_sample_docx_bytes, build_sample_pdf_bytes
 
 
@@ -102,7 +107,7 @@ def test_core_api_does_not_import_streamlit():
         [
             sys.executable,
             "-c",
-            "import sys; import extractors; assert 'streamlit' not in sys.modules",
+            "import sys; import pdf_hyperlink_extractor; assert 'streamlit' not in sys.modules",
         ],
         check=True,
         capture_output=True,

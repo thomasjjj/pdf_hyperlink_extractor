@@ -17,9 +17,9 @@
       ]
     }
   },
-  "postCreateCommand": "python -m pip install --user -r requirements-dev.txt",
+  "postCreateCommand": "python -m pip install --user --upgrade pip && python -m pip install --user -e '.[streamlit]' --group dev",
   "postAttachCommand": {
-    "server": "python -m streamlit run streamlit_app.py --server.address 0.0.0.0"
+    "server": "python -m pdf_hyperlink_extractor.ui --server.address 0.0.0.0"
   },
   "portsAttributes": {
     "8501": {

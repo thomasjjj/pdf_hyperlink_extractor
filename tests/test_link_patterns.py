@@ -1,4 +1,4 @@
-import link_patterns
+from pdf_hyperlink_extractor import link_patterns
 
 
 def test_url_with_fragment():

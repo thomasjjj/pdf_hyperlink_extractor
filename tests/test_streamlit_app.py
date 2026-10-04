@@ -1,12 +1,9 @@
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-import streamlit as st
 from docx import Document
-from streamlit.testing.v1 import AppTest
 
-from extractors import extract_links
+from pdf_hyperlink_extractor import extract_links
 from tests.document_builders import (
     build_pdf,
     build_sample_docx_bytes,
@@ -14,7 +11,13 @@ from tests.document_builders import (
     save_docx,
 )
 
-APP_PATH = Path(__file__).resolve().parents[1] / "streamlit_app.py"
+st = pytest.importorskip("streamlit")
+from streamlit.testing.v1 import AppTest  # noqa: E402
+
+from pdf_hyperlink_extractor import streamlit_app  # noqa: E402
+
+pytestmark = pytest.mark.streamlit
+APP_PATH = streamlit_app.__file__
 
 
 @pytest.fixture
@@ -72,7 +75,7 @@ def test_upload_extract_and_download(app, filename, builder):
 
 def test_reruns_and_downloads_do_not_parse_again(app):
     upload(app, "report.pdf", build_sample_pdf_bytes())
-    with patch("extractors.extract_links", wraps=extract_links) as extract:
+    with patch("pdf_hyperlink_extractor.extractors.extract_links", wraps=extract_links) as extract:
         submit(app)
         app.run()
         app.download_button[0].click().run()
